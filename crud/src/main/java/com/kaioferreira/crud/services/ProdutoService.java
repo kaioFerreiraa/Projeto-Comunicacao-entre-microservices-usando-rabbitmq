@@ -10,20 +10,24 @@ import org.springframework.stereotype.Service;
 import com.kaioferreira.crud.data.vo.ProdutoVO;
 import com.kaioferreira.crud.entity.Produto;
 import com.kaioferreira.crud.exception.ResourceNotFoundException;
+import com.kaioferreira.crud.message.ProdutoSendMessage;
 import com.kaioferreira.crud.repository.ProdutoRepository;
 
 @Service
 public class ProdutoService {
 	
 	private final ProdutoRepository produtoRepository;
+	private final ProdutoSendMessage produtoSendMessage;
 	
 	@Autowired
-	public ProdutoService(ProdutoRepository produtoRepository) {
+	public ProdutoService(ProdutoRepository produtoRepository, ProdutoSendMessage produtoSendMessage) {
 		this.produtoRepository = produtoRepository;
+		this.produtoSendMessage = produtoSendMessage;
 	}
 	
 	public ProdutoVO create(ProdutoVO produtoVO) {
 		ProdutoVO proVoRetorno = ProdutoVO.create(produtoRepository.save(Produto.create(produtoVO)));
+		produtoSendMessage.sendMessage(proVoRetorno);
 		return proVoRetorno;
 	}
 	
@@ -49,7 +53,10 @@ public class ProdutoService {
 			new ResourceNotFoundException("No records found for this ID");
 		}
 		
-		return ProdutoVO.create(produtoRepository.save(Produto.create(produtoVO)));
+		ProdutoVO proVoRetorno = ProdutoVO.create(produtoRepository.save(Produto.create(produtoVO)));
+		produtoSendMessage.sendMessage(proVoRetorno);
+		
+		return proVoRetorno;
 	}
 	
 	public void delete(Long id) {
@@ -57,6 +64,7 @@ public class ProdutoService {
 				() -> new ResourceNotFoundException("No records found for this ID"));
 		
 		produtoRepository.delete(entity);
+		produtoSendMessage.sendMessageDelete(id);
 	}
 	
 }
